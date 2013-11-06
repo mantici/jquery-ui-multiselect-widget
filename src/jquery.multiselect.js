@@ -1,3 +1,5 @@
+
+
 /* jshint forin:true, noarg:true, noempty:true, eqeqeq:true, boss:true, undef:true, curly:true, browser:true, jquery:true */
 /*
  * jQuery MultiSelect UI Widget 1.14pre
@@ -28,21 +30,27 @@
     // default options
     options: {
       header: true,
-      height: 175,
+      height: 250,
       minWidth: 225,
       classes: '',
       checkAllText: 'Check all',
       uncheckAllText: 'Uncheck all',
       noneSelectedText: 'Select options',
       selectedText: '# selected',
-      selectedList: 0,
+      selectedList: 1,
       show: null,
       hide: null,
       autoOpen: false,
       multiple: true,
-      position: {},
-      appendTo: "body"
+      autoHeight:false,
+      position: {}
     },
+
+    isIE: function () {
+        var myNav = navigator.userAgent.toLowerCase();
+        return (myNav.indexOf('msie') != -1);
+    },
+
 
     _create: function() {
       var el = this.element.hide();
@@ -51,12 +59,13 @@
       this.speed = $.fx.speeds._default; // default speed for effects
       this._isOpen = false; // assume no
 
+
       // create a unique namespace for events that the widget
       // factory cannot unbind automatically. Use eventNamespace if on
       // jQuery UI 1.9+, and otherwise fallback to a custom string.
       this._namespaceID = this.eventNamespace || ('multiselect' + multiselectID);
 
-      var button = (this.button = $('<button type="button"><span class="ui-icon ui-icon-triangle-1-s"></span></button>'))
+        var button = (this.button = $('<button type="button"  ><span class="ui-icon ui-icon-triangle-1-s" ></span></button>'))
         .addClass('ui-multiselect ui-widget ui-state-default ui-corner-all')
         .addClass(o.classes)
         .attr({ 'title':el.attr('title'), 'aria-haspopup':true, 'tabIndex':el.attr('tabIndex') })
@@ -66,10 +75,11 @@
           .html(o.noneSelectedText)
           .appendTo(button),
 
+
         menu = (this.menu = $('<div />'))
           .addClass('ui-multiselect-menu ui-widget ui-widget-content ui-corner-all')
           .addClass(o.classes)
-          .appendTo($(o.appendTo)),
+          .appendTo(document.body),
 
         header = (this.header = $('<div />'))
           .addClass('ui-widget-header ui-corner-all ui-multiselect-header ui-helper-clearfix')
@@ -77,21 +87,26 @@
 
         headerLinkContainer = (this.headerLinkContainer = $('<ul />'))
           .addClass('ui-helper-reset')
-          .html(function() {
-            if(o.header === true) {
-              return '<li><a class="ui-multiselect-all" href="#"><span class="ui-icon ui-icon-check"></span><span>' + o.checkAllText + '</span></a></li><li><a class="ui-multiselect-none" href="#"><span class="ui-icon ui-icon-closethick"></span><span>' + o.uncheckAllText + '</span></a></li>';
-            } else if(typeof o.header === "string") {
-              return '<li>' + o.header + '</li>';
-            } else {
-              return '';
-            }
+          .html(function () {
+              if (o.header === true) {
+                  return '<li><a class="ui-multiselect-all" href="#"><span>' + o.checkAllText + '</span></a></li><li><a class="ui-multiselect-none" href="#"><span>' + o.uncheckAllText + '</span></a></li>';
+              } else if (typeof o.header === "string") {
+                  return '<li>' + o.header + '</li>';
+              } else {
+                  return '';
+              }
           })
-          .append('<li class="ui-multiselect-close"><a href="#" class="ui-multiselect-close"><span class="ui-icon ui-icon-circle-close"></span></a></li>')
+          //.append('<li class="ui-multiselect-close"><a href="#" class="ui-multiselect-close"><span class="ui-icon ui-icon-circle-close"></span></a></li>')
           .appendTo(header),
 
         checkboxContainer = (this.checkboxContainer = $('<ul />'))
           .addClass('ui-multiselect-checkboxes ui-helper-reset')
           .appendTo(menu);
+
+
+        if (this.isIE() == true) {
+            this.button.addClass('ui-multiselect-IEoffset')
+        }
 
         // perform event bindings
         this._bindEvents();
@@ -136,8 +151,8 @@
       el.find('option').each(function(i) {
         var $this = $(this);
         var parent = this.parentNode;
-        var description = this.innerHTML;
-        var title = this.title;
+        var title = this.innerHTML;
+        var description = this.title;
         var value = this.value;
         var inputID = 'ui-multiselect-' + (this.id || id + '-option-' + i);
         var isDisabled = this.disabled;
@@ -170,7 +185,7 @@
         html += '<li class="' + liClasses + '">';
 
         // create the label
-        html += '<label for="' + inputID + '" title="' + title + '" class="' + labelClasses.join(' ') + '">';
+        html += '<label for="' + inputID + '" title="' + description + '" class="' + labelClasses.join(' ') + '">';
         html += '<input id="' + inputID + '" name="multiselect_' + id + '" type="' + (o.multiple ? "checkbox" : "radio") + '" value="' + value + '" title="' + title + '"';
 
         // pre-selected?
@@ -186,7 +201,7 @@
         }
 
         // add the title and close everything off
-        html += ' /><span>' + description + '</span></label></li>';
+        html += ' /><span>' + title + '</span></label></li>';
       });
 
       // insert into the DOM
@@ -400,15 +415,8 @@
       });
 
       // close each widget when clicking on any other element/anywhere else on the page
-      $doc.bind('mousedown.' + this._namespaceID, function(event) {
-        var target = event.target;
-
-        if(self._isOpen
-            && target !== self.button[0]
-            && target !== self.menu[0]
-            && !$.contains(self.menu[0], target)
-            && !$.contains(self.button[0], target)
-          ) {
+      $doc.bind('mousedown.' + this._namespaceID, function(e) {
+        if(self._isOpen && !$.contains(self.menu[0], e.target) && !$.contains(self.button[0], e.target) && e.target !== self.button[0]) {
           self.close();
         }
       });
@@ -424,8 +432,11 @@
 
     // set button width
     _setButtonWidth: function() {
-      var width = this.element.outerWidth();
-      var o = this.options;
+        var width = this.element.outerWidth();
+        var height = this.element.outerHeight();
+        //if (height < 24) { height = 24 }
+
+        var o = this.options;
 
       if(/\d/.test(o.minWidth) && width < o.minWidth) {
         width = o.minWidth;
@@ -433,6 +444,8 @@
 
       // set widths
       this.button.outerWidth(width);
+      this.button.outerHeight(height);
+
     },
 
     // set menu width
@@ -447,7 +460,7 @@
       var moveToLast = which === 38 || which === 37;
 
       // select the first li that isn't an optgroup label / disabled
-      var $next = $start.parent()[moveToLast ? 'prevAll' : 'nextAll']('li:not(.ui-multiselect-disabled, .ui-multiselect-optgroup-label)').first();
+      $next = $start.parent()[moveToLast ? 'prevAll' : 'nextAll']('li:not(.ui-multiselect-disabled, .ui-multiselect-optgroup-label)')[ moveToLast ? 'last' : 'first']();
 
       // if at the first/last element
       if(!$next.length) {
@@ -574,19 +587,21 @@
       $container.scrollTop(0).height(o.height);
 
       // positon
-      this.position();
+       $.fn.show.apply(menu, args);
+     this.position();
 
-      // show the menu, maybe with a speed/effect combo
-      $.fn.show.apply(menu, args);
+      // show the menu, maybe with a speed/effect como
 
-      // select the first not disabled option
+      // select the first option
       // triggering both mouseover and mouseover because 1.4.2+ has a bug where triggering mouseover
       // will actually trigger mouseenter.  the mouseenter trigger is there for when it's eventually fixed
-      this.labels.filter(':not(.ui-state-disabled)').eq(0).trigger('mouseover').trigger('mouseenter').find('input').trigger('focus');
+      this.labels.eq(0).trigger('mouseover').trigger('mouseenter').find('input').trigger('focus');
 
       button.addClass('ui-state-active');
       this._isOpen = true;
       this._trigger('open');
+
+
     },
 
     // close the menu
@@ -667,7 +682,7 @@
     position: function() {
       var o = this.options;
 
-      // use the position utility if it exists and options are specifified
+        // use the position utility if it exists and options are specifified
       if($.ui.position && !$.isEmptyObject(o.position)) {
         o.position.of = o.position.of || this.button;
 
@@ -679,13 +694,83 @@
         // otherwise fallback to custom positioning
       } else {
         var pos = this.button.offset();
+        $(this.checkboxContainer).height(this.options.height)
+        $(this.menu).height($(this.checkboxContainer).height() + $(this.header).height() + 10)
 
-        this.menu.css({
-          top: pos.top + this.button.outerHeight(),
-          left: pos.left
-        });
+
+        var int_dist_to_top = pos.top - $(window).scrollTop();
+        var int_dist_to_bottom = $(window).height() - int_dist_to_top + this.button.outerHeight();
+        var str_direction = '';
+
+         
+        if ((int_dist_to_bottom < $(this.menu).height() &&
+            int_dist_to_top < $(this.menu).height()) ||
+            o.autoHeight == true) {
+            var ULHeight = this._itemsHeight(Math.max(int_dist_to_top,int_dist_to_bottom))
+            
+            //always try to drop down. 
+            if (ULHeight < (int_dist_to_bottom - 50)) {//it will fit in bottom
+                int_dist_to_top = 0;
+            }
+
+
+            //pick taller direction
+            if (int_dist_to_bottom > int_dist_to_top) {
+                ULHeight = ULHeight + 60 + $(this.header).height()
+                var useHeight = Math.min(ULHeight,int_dist_to_bottom)
+
+
+                $(this.menu).height(useHeight - 50);
+                $(this.checkboxContainer).height($(this.menu).height() - $(this.header).height() - 10);
+                str_direction = 'down'
+            }
+            else {
+                ULHeight = ULHeight + 30 + $(this.header).height()
+                var useHeight = Math.min(ULHeight, int_dist_to_top)
+                $(this.menu).height(useHeight - 20);
+                $(this.checkboxContainer).height($(this.menu).height() - $(this.header).height() - 10);
+                str_direction = 'up'
+            }
+        }
+
+        if (str_direction == '') {
+            if (int_dist_to_bottom > $(this.menu).height()) {
+                str_direction = 'down';
+            }
+            else {
+                str_direction = 'up';
+            }
+        }
+
+
+        if (str_direction == 'up') {//drop up
+           this.menu.css({
+                top: pos.top - $(this.menu).height() -10,
+                left: pos.left
+            });
+        }
+        else { //drop down
+            this.menu.css({
+                top: pos.top + this.button.outerHeight(),
+                left: pos.left
+            });
+        }
+
+
       }
     },
+
+    _itemsHeight: function (maxHeight)
+    {
+        var listHeight = 0;
+        $(this.checkboxContainer).find('li').each(function(){
+            listHeight += $(this).height();
+             if (listHeight > maxHeight) { return maxHeight }
+        });
+
+        return listHeight + 5
+    },
+
 
     // react to option changes after initialization
     _setOption: function(key, value) {
