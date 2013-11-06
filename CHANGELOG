@@ -1,4 +1,10 @@
 jQuery UI MultiSelect Widget Changelog
+Version 1.14 - 11/06/2013
+==============================================
+- Added IE offset for alignment issues 
+- Added auto sizing, and "drop up" feature (unless using ui position utilty)
+- Now compatible with Jquery 1.10.2 & JQuery UI 1.10
+
 
 Version 1.13 - 08/19/2012
 ==============================================
